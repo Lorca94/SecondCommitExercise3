@@ -8,7 +8,7 @@ Users newUser = new Users();
 newUser.email = "email@email.com";
 newUser.password = "1234";
 // Se intenta registrar el usuario
-userRegistered = RegisterUsers(newUser, userRegistered);
+Console.WriteLine(RegisterUsers(newUser, userRegistered));
 Users newUser2 = new Users();
 newUser2.email = "email@email.com";
 newUser2.password = "1234";
@@ -16,9 +16,9 @@ Console.WriteLine(Login(newUser2, userRegistered));
 
 
 /*
- * RegisterUser registrará los usuarios en un list y devolverá la lista modificada en caso de poder incluir el user
+ * RegisterUser registrará los usuarios en un list y devolverá true si puede añadirlo o false si no puede
  */ 
-static List<Users> RegisterUsers(Users user, List<Users> userRegistered)
+static bool RegisterUsers(Users user, List<Users> userRegistered)
 {
     // Condición: Si hay algún usuario registrado
     if (userRegistered.Count != 0)
@@ -30,7 +30,7 @@ static List<Users> RegisterUsers(Users user, List<Users> userRegistered)
             {
                 // Se muestra una razón por la que no se ha insertado en el array y devuelve el array sin modificar
                 Console.WriteLine("Email ya registrado anteriormente.");
-                return userRegistered;
+                return false;
             }
         }
     }
@@ -54,39 +54,45 @@ static List<Users> RegisterUsers(Users user, List<Users> userRegistered)
     // Se añade al list
     userRegistered.Add(user);
     Console.WriteLine("Usuario registrado con éxito");
-    return userRegistered;
+    return true;
 }
 
 /*
  * Se comprobará si la contraseña introducida por el usuario es correcta o no
 */ 
-static bool Login(Users user, List<Users> userRegistered)
+static int Login(Users user, List<Users> userRegistered)
 {
-    bool log = false;
-    foreach(Users DBUser in userRegistered)
+    // Usuario no existe
+    int log = -1;
+    foreach (Users DBUser in userRegistered)
     {
-        // Se obtiene el password guardado
-        string savePasswordHash = DBUser.password;
-
-        // Extracción de bytes
-        byte[] hashBytes = Convert.FromBase64String(savePasswordHash);
-        // Obtenemos el salt
-        byte[] salt = new byte[16];
-        Array.Copy(hashBytes, 0, salt, 0, 16);
-        //Se calcula el hash de la contraseña que ingresó el usuario
-        var pbkdf2 = new Rfc2898DeriveBytes(user.password, salt, 100000);
-        byte[] hash = pbkdf2.GetBytes(20);
-
-        // Se comparan las passwords
-        for(int i = 0; i < 20; i++)
+        if(DBUser.email == user.email)
         {
-            if(hashBytes[i+16] != hash[i])
+            // Se obtiene el password guardado
+            string savePasswordHash = DBUser.password;
+
+            // Extracción de bytes
+            byte[] hashBytes = Convert.FromBase64String(savePasswordHash);
+            // Obtenemos el salt
+            byte[] salt = new byte[16];
+            Array.Copy(hashBytes, 0, salt, 0, 16);
+            //Se calcula el hash de la contraseña que ingresó el usuario
+            var pbkdf2 = new Rfc2898DeriveBytes(user.password, salt, 100000);
+            byte[] hash = pbkdf2.GetBytes(20);
+
+            // Se comparan las passwords
+            for (int i = 0; i < 20; i++)
             {
-                log = false;
-            }
-            else
-            {
-                log = true;
+                if (hashBytes[i + 16] != hash[i])
+                {
+                    // Contraseña incorrecta
+                    log = -2;
+                }
+                else
+                {
+                    // Usuario y contraseña correctos
+                    log = 1;
+                }
             }
         }
     }
